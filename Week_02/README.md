@@ -6,7 +6,7 @@
 
 使用 GCLogAnalysis.java 演练结果如下图所示：
 
-![1603864955737](C:\Users\hero0\AppData\Roaming\Typora\typora-user-images\1603864955737.png)
+![1603864955737](https://github.com/hellboy0621/JAVA-000/blob/main/Week_02/GCLogAnalysisResult.png)
 
 - 串行GC
   - Minor GC时，DefNew回收年轻代，以及Tenured回收老年代
@@ -28,7 +28,7 @@
 
 压测性能结果如下图所示：
 
-![1603862839713](C:\Users\hero0\AppData\Roaming\Typora\typora-user-images\1603862839713.png)
+![1603862839713](https://github.com/hellboy0621/JAVA-000/blob/main/Week_02/PressureTestResult.png)
 
 结论：
 
