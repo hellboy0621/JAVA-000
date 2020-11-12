@@ -3,8 +3,12 @@
 HomeworkCallable
 
 - 使用Callable和FutureTask实现
-
 - 使用时间：162 ms
+
+HomeworkCountLatch
+
+ * 使用CountLatch实现
+ * 使用时间：183 ms
 
 HomeworkJoin
 
