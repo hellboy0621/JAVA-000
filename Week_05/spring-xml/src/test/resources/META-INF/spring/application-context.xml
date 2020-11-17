@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:school="http://www.transformers.com/schema/transformers/school"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.transformers.com/schema/transformers/school
+                           http://www.transformers.com/schema/transformers/school/school.xsd
+                           ">
+
+    <bean id="stu101" class="com.transformers.entity.Student">
+        <property name="id" value="101"/>
+        <property name="name" value="stu101"/>
+    </bean>
+    <bean id="stu102" class="com.transformers.entity.Student">
+        <property name="id" value="102"/>
+        <property name="name" value="stu102"/>
+    </bean>
+    <bean id="stu103" class="com.transformers.entity.Student">
+        <property name="id" value="103"/>
+        <property name="name" value="stu103"/>
+    </bean>
+
+    <school:school id="school1" klass-refs="klass1" student-refs="stu103"/>
+
+    <school:klass id="klass1" students-refs="stu101,stu102,stu103"/>
+
+</beans>

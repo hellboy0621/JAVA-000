@@ -1,0 +1,6 @@
+
+先根据实体类，创建对应的xsd文件
+创建spring.schemas，将刚刚创建的xsd文件映射为命名空间
+创建spring.handlers，将解析xml文件的handler类关联起来
+在handler类中实现具体的parser
+单元测试
