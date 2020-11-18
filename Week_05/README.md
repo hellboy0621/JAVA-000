@@ -18,7 +18,13 @@
 
 
 
+
+
 #### class10-3.给前面课程提供的Student/Klass/School实现自动配置和Starter
 
 代码详见assignment-spring-boot-starter文件夹。
+
+#### class10-6.（必做）研究一下JDBC接口和数据库连接池，掌握它们的设计和用法
+
+代码详见jdbc文件夹。
 
