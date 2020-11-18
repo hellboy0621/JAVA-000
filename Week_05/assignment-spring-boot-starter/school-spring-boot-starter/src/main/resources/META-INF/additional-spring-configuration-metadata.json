@@ -1,0 +1,21 @@
+{
+  "properties": [
+    {
+      "name": "spring.school.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether enable school or not.",
+      "defaultValue": true
+    },
+    {
+      "name": "spring.school.props",
+      "type": "java.util.Properties",
+      "sourceType": "com.transformers.spring.boot.prop.SpringBootPropertiesConfiguration",
+      "description": "Customize school properties."
+    },
+    {
+      "name": "spring.school.props.students",
+      "type": "java.lang.String",
+      "description": "Description for spring.school.props.students."
+    }
+  ]
+}

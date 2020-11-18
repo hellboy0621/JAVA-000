@@ -18,3 +18,7 @@
 
 
 
+#### class10-3.给前面课程提供的Student/Klass/School实现自动配置和Starter
+
+代码详见assignment-spring-boot-starter文件夹。
+

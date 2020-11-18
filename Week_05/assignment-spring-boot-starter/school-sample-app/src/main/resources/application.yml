@@ -1,0 +1,9 @@
+spring:
+  school:
+    props:
+      students:
+        - '201@_@stu201'
+        - '202@_@stu202'
+        - '203@_@stu203'
+server:
+  port: 8080
