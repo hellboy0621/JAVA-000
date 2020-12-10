@@ -1,0 +1,24 @@
+server:
+  port: 8883
+  address: 0.0.0.0
+  servlet:
+    context-path: /inventory-service
+
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/hmily_stock?useUnicode=true&characterEncoding=utf8
+    username: root
+    password:
+  main:
+    allow-bean-definition-overriding: true
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
