@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.transformer.dao.OrderMapper">
+
+    <select id="selectById" resultType="com.transformer.entity.OrderDO">
+        select order_id orderId,
+            user_id userId,
+            discount,
+            total_price totalPrice,
+            remark,
+            create_time createTime,
+            update_time updateTime
+        from t_order
+        where order_id = #{id}
+    </select>
+
+    <insert id="insert">
+        insert into t_order(order_id, user_id,discount,total_price,remark,create_time,update_time)
+        values(
+            #{orderDO.orderId},
+            #{orderDO.userId},
+            #{orderDO.discount},
+            #{orderDO.totalPrice},
+            #{orderDO.remark},
+            #{orderDO.createTime},
+            #{orderDO.updateTime}
+        );
+    </insert>
+    
+    <delete id="delete">
+        delete from t_order
+        where order_id = #{id}
+    </delete>
+
+    <update id="update" parameterType="com.transformer.entity.OrderDO">
+        update t_order
+        <set>
+            user_id = #{orderDO.userId},
+            discount = #{orderDO.discount},
+            total_price = #{orderDO.totalPrice},
+            remark = #{orderDO.remark},
+            create_time = #{orderDO.createTime},
+            update_time = #{orderDO.updateTime}
+        </set>
+        where order_id = #{orderDO.orderId}
+    </update>
+
+</mapper>
