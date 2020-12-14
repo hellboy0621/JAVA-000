@@ -1,0 +1,27 @@
+
+// 定义语法类型，必须位于第一行，如果不指定，默认使用proto2
+syntax = "proto3";
+
+// 定义作用域
+package hello;
+// 不需要编译成多个Java文件
+option java_multiple_files = false;
+// 下面定义的message编译成的Java类文件名
+option java_outer_classname = "HelloMessage";
+// 指定proto文件编译成的Java源文件包名
+option java_package = "com.transformers.grpc";
+
+// 定义服务
+service Hello {
+    rpc sayHello(HelloRequest) returns(HelloResponse) {}
+}
+
+// 定义请求消息体
+message HelloRequest {
+    string name = 1;
+}
+
+// 定义回复消息体
+message HelloResponse {
+    string message = 1;
+}
