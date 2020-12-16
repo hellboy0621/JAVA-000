@@ -30,6 +30,12 @@ public class RpcfxServerApplication {
 		return invoker.invoke(request);
 	}
 
+	// 这里使用 String 接收 client 传过来的XML，再使用 xstream 解析
+    @PostMapping(value = "/xstream")
+    public String xstreamInvoke(@RequestBody String request) {
+        return invoker.xstreamInvoke(request);
+    }
+
 	@Bean
 	public RpcfxInvoker createInvoker(@Autowired RpcfxResolver resolver){
 		return new RpcfxInvoker(resolver);

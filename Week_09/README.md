@@ -25,6 +25,7 @@ server启动完成
 1. 封装一个全局的RpcfxException
 2. 客户端动态代理使用ByteBuddy字节码增强技术替换
 3. 去掉 @Bean 的 name 属性，使用类型依赖查找
+4. 增加 xstream 序列化方式
 
 
 

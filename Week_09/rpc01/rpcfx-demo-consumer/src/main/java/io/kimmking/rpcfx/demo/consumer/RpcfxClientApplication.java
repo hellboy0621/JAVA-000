@@ -37,6 +37,13 @@ public class RpcfxClientApplication {
 		}
 		// 新加一个OrderService
 
+        // 使用 xstream 序列化方式
+        userService = RpcfxByteBuddy.xstreamCreate(UserService.class, "http://localhost:8080/xstream");
+        if (userService != null) {
+            User user = userService.findById(1);
+            System.out.println("find user id=1 from server: " + user.getName());
+        }
+
 //		SpringApplication.run(RpcfxClientApplication.class, args);
 	}
 

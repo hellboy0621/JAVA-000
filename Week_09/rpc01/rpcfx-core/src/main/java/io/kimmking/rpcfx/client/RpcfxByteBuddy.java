@@ -25,5 +25,20 @@ public class RpcfxByteBuddy {
             return null;
         }
     }
-    
+
+    public static <T> T xstreamCreate(Class<T> serviceClass, String url) {
+        try {
+            return (T) new ByteBuddy()
+                    .subclass(Object.class)
+                    .implement(serviceClass)
+                    .intercept(InvocationHandlerAdapter.of(new RpcfxXstreamInvocationHandler(serviceClass, url)))
+                    .make()
+                    .load(RpcfxByteBuddy.class.getClassLoader())
+                    .getLoaded()
+                    .getDeclaredConstructor()
+                    .newInstance();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
