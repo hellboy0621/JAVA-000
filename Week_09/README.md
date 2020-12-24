@@ -48,6 +48,111 @@ server启动完成
 1）用户A的美元账户和人民币账户都在A库，使用1美元兑换7人民币；
 2）用户B的美元账户和人民币账户都在B库，使用7人民币兑换1美元；
 3）设计账户表，冻结资产表，实现上述两个本地事务的分布式事务。
+
+设计两张表：
+
+​	一张账户表，记录用户的账户余额及冻结金额信息；
+
+​	一张交易表，记录两个账户之间交易的详细信息。
+
+一共2个数据库：（假设当前汇率美元:人民币=1:7）
+
+​	用户A(user_id=1,account_id=1)在transaction_a库，初始余额usd_balance=1000，rmb_balance=0；
+
+​	用户B(user_id=2,account_id=2)在transaction_a库，初始余额usd_balance=0，rmb_balance=1000；
+
+```mysql
+create table `t_account`(
+	`account_id` bigint unsigned not null auto_increment,
+    `user_id` bigint unsigned not null comment '用户ID',
+    `usd_balance` decimal(10,2) unsigned DEFAULT '0.00' comment '美金账户余额',
+    `rmb_balance` decimal(10,2) unsigned DEFAULT '0.00' comment '人民币账户余额',
+    `usd_freeze_amount` decimal(10,2) NOT NULL COMMENT '美金账户冻结金额，扣款暂存余额',
+    `rmb_freeze_amount` decimal(10,2) NOT NULL COMMENT '人民币账户冻结金额，扣款暂存余额',
+    `create_time` bigint unsigned not null default 0 comment '创建时间',
+    `update_time` bigint unsigned not null default 0 comment '更新时间',
+    primary key (`account_id`)
+) comment='账户表' engine=InnoDB charset=utf8mb4 COLLATE = 'utf8mb4_general_ci';
+
+insert into t_account
+values(null, 1, 1, 0, 0, 0, 1608727171156, 1608727171156);
+insert into t_account
+values(null, 2, 0, 7, 0, 0, 1608727171156, 1608727171156);
+
+create table `t_transaction`(
+	`transaction_id` bigint unsigned not null auto_increment,
+    `from_account_id` bigint unsigned not null comment '用户ID',
+    `to_account_id` bigint unsigned not null comment '用户ID',
+    `type` varchar(16) not null default '' comment '交易币种类型 usd rmb',
+    `amount` decimal(10,2) NOT NULL COMMENT '交易金额',
+    `create_time` bigint unsigned not null default 0 comment '创建时间',
+    `update_time` bigint unsigned not null default 0 comment '更新时间',
+    primary key (`transaction_id`)
+) comment='交易表' engine=InnoDB charset=utf8mb4 COLLATE = 'utf8mb4_general_ci';
+
+```
+
+代码详见dubbo-study文件夹。
+
+依次启动项目DubboServerApplication和DubboClientApplication，必须按照顺序启动，否则在启动client时报找不到dubbo指定的service引用而启动失败。
+
+启动后，在浏览器或postman上以GET方式调用接口http://localhost:8089/transaction/trans，成功后显示"success"。
+
+成功后，查看账户余额，A用户usd_balance由1000减为999，rmb_balance由0增为7；B用户usd_balance由0增为1，rmb_balance由1000减为993。
+
+```bash
+mysql> select * from transaction_a.t_account;
++------------+---------+-------------+-------------+-------------------+-------------------+---------------+---------------+
+| account_id | user_id | usd_balance | rmb_balance | usd_freeze_amount | rmb_freeze_amount | create_time   | update_time   |
++------------+---------+-------------+-------------+-------------------+-------------------+---------------+---------------+
+|          1 |       1 |      999.00 |        7.00 |              0.00 |              0.00 | 1608727171156 | 1608727171156 |
++------------+---------+-------------+-------------+-------------------+-------------------+---------------+---------------+
+1 row in set (0.00 sec)
+
+mysql> select * from transaction_b.t_account;
++------------+---------+-------------+-------------+-------------------+-------------------+---------------+---------------+
+| account_id | user_id | usd_balance | rmb_balance | usd_freeze_amount | rmb_freeze_amount | create_time   | update_time   |
++------------+---------+-------------+-------------+-------------------+-------------------+---------------+---------------+
+|          2 |       2 |        1.00 |      993.00 |              0.00 |              0.00 | 1608727171156 | 1608727171156 |
++------------+---------+-------------+-------------+-------------------+-------------------+---------------+---------------+
+1 row in set (0.00 sec)
+```
+
+
+
+踩坑记录：
+
+1.使用注解的MyBatis，在Mapper接口中的参数需要加上@Param，否则报没有getter方法。
+
+2.引入Hmily依赖时，需要排除一些jar包，否则冲突造成项目不能正常启动。
+
+```xml
+<dependency>
+    <groupId>org.dromara</groupId>
+    <artifactId>hmily-spring-boot-starter-apache-dubbo</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>org.dromara</groupId>
+            <artifactId>hmily-repository-mongodb</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+```
+
+
+
 4、（挑战☆☆）尝试扩展Dubbo
 1）基于上次作业的自定义序列化，实现Dubbo的序列化扩展；
 2）基于上次作业的自定义RPC，实现Dubbo的RPC扩展；
