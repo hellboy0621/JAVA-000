@@ -32,7 +32,16 @@ java.lang.RuntimeException: get lock failed.
 
 2）在Java中实现一个分布式计数器，模拟减库存。
 
+详见项目 redis-stock。
 
+实现思路：
 
+1.基于 Spring Boot + RedisTemplate 实现。
+2.使用 Lua 脚本，保证 Redis 减库存的原子性。
 
+测试步骤：
 
+1.启动项目。
+2.调用获取库存接口 http://localhost:8080/getStock，如果是第一次调用，返回 -1。
+3.调用减库存接口 http://localhost:8080/stock，默认库存为1000，超时时间设为1小时。每调用一次库存减一。
+4.使用 wrk 压测，可以保证只要调用超过1000次，获取库存数量为0。
