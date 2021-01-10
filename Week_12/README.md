@@ -602,6 +602,22 @@ root     27567  3482  0 06:38 pts/1    00:00:00 redis-sentinel *:26380 [sentinel
 root     27581  3482  0 06:40 pts/1    00:00:00 grep --color=auto redis
 ```
 
+因为 redis-sentinel 本质上是 redis-server ，可以连接上查看信息
+
+```bash
+[root@master config]# redis-cli -p 26379
+127.0.0.1:26379> info Sentinel
+# Sentinel
+sentinel_masters:1
+sentinel_tilt:0
+sentinel_running_scripts:0
+sentinel_scripts_queue_length:0
+sentinel_simulate_failure_flags:0
+master0:name=mymaster,status=ok,address=192.168.56.95:6379,slaves=1,sentinels=2
+```
+
+
+
 验证哨兵的故障转移是否正常。
 
 现在主节点是6379，结束其进程，查看6380的主从信息
@@ -673,4 +689,23 @@ repl_backlog_histlen:108474
 ```
 
 
+
+6.集群
+
+
+
+
+
+class23-2 练习示例代码里下列类中的作业题
+
+详见文件夹 redis-demo。
+
+1. 最简单 Jedis Demo（com.xtransformers.redis.jedis.JedisDemo）
+2. 基于 Sentinel 和连接池的 Demo（com.xtransformers.redis.jedis.sentinel.SentinelJedisDemo）
+3. 直接连接 Sentinel 操作 Demo（com.xtransformers.redis.jedis.sentinel.SentinelJedisDirectDemo）
+4. 基于 Lettuce 的 Sentinel 配置（com.xtransformers.redis.lettuce.LettuceSentinelDemo）
+5. 基于 Redission 的 Sentinel 配置（com.xtransformers.redis.redission.RedissionSentinelDemo）
+6. 基于 Spring Boot/Spring Data Redis 的 Sentinel 配置（com.xtransformers.redis.SentinelApplication 及 application.yml）
+
+未完待续。。。
 
