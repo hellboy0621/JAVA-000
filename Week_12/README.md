@@ -692,6 +692,125 @@ repl_backlog_histlen:108474
 
 6.集群
 
+```bash
+cd /opt
+mkdir redis-cluster
+cd redis-cluster
+mkdir 7000 7001 7002 7003 7004 7005
+```
+
+分别在文件夹下创建自己的配置文件 redis.conf，只要修改每个文件的端口号。
+
+```bash
+# /opt/redis-cluster/7000/redis.conf
+port 7000
+cluster-enabled yes
+cluster-config-file /opt/redis-cluster/7000/nodes.conf
+cluster-node-timeout 5000
+appendonly yes
+bind 0.0.0.0
+```
+
+这里有个坑，因为我是用的虚拟机，如果没有最后一行的 bind 命令，如果你在宿主机上打算连接这个集群时，会报错如下所示：
+
+```bash
+(error) DENIED Redis is running in protected mode because protected mode is enabled, no bind address was specified, no authentication password is requested to clients. In this mode connections are only accepted from the loopback interface. If you want to connect from external computers to Redis you may adopt one of the following solutions: 1) Just disable protected mode sending the command 'CONFIG SET protected-mode no' from the loopback interface by connecting to Redis from the same host the server is running, however MAKE SURE Redis is not publicly accessible from internet if you do so. Use CONFIG REWRITE to make this change permanent. 2) Alternatively you can just disable the protected mode by editing the Redis configuration file, and setting the protected mode option to 'no', and then restarting the server. 3) If you started the server manually just for testing, restart it with the '--protected-mode no' option. 4) Setup a bind address or an authentication password. NOTE: You only need to do one of the above things in order for the server to start accepting connections from the outside.
+```
+
+所以这里使用虚拟机 IP 地址进行创建：
+
+```bash
+redis-cli --cluster create 192.168.56.95:7000 192.168.56.95:7001 \
+> 192.168.56.95:7002 192.168.56.95:7003 192.168.56.95:7004 192.168.56.95:7005 \
+> --cluster-replicas 1
+```
+
+执行上述命令后，redis-cli 会提出一个建议，如果接受，键入 yes 即可，具体如下：
+
+```bash
+[root@master redis-cluster]# redis-cli --cluster create 192.168.56.95:7000 192.168.56.95:7001 \
+> 192.168.56.95:7002 192.168.56.95:7003 192.168.56.95:7004 192.168.56.95:7005 \
+> --cluster-replicas 1
+>>> Performing hash slots allocation on 6 nodes...
+Master[0] -> Slots 0 - 5460
+Master[1] -> Slots 5461 - 10922
+Master[2] -> Slots 10923 - 16383
+Adding replica 192.168.56.95:7004 to 192.168.56.95:7000
+Adding replica 192.168.56.95:7005 to 192.168.56.95:7001
+Adding replica 192.168.56.95:7003 to 192.168.56.95:7002
+>>> Trying to optimize slaves allocation for anti-affinity
+[WARNING] Some slaves are in the same host as their master
+M: 6ca88a5bd6cdc139c33dc3b90501c686567d7088 192.168.56.95:7000
+   slots:[0-5460] (5461 slots) master
+M: 1974cd8abd06ff9638004b5dbaf968cff6e54a55 192.168.56.95:7001
+   slots:[5461-10922] (5462 slots) master
+M: bc7c30276b6fe86d9121e07eb5c8e16a784572a9 192.168.56.95:7002
+   slots:[10923-16383] (5461 slots) master
+S: 9cd58bd9b083ecfae691600394bba5241943db97 192.168.56.95:7003
+   replicates 6ca88a5bd6cdc139c33dc3b90501c686567d7088
+S: 9abdbc210808c6fba9272459aa840db0bf34d457 192.168.56.95:7004
+   replicates 1974cd8abd06ff9638004b5dbaf968cff6e54a55
+S: c86d5ecfbed627320f2fcc423ebb19c7917fee48 192.168.56.95:7005
+   replicates bc7c30276b6fe86d9121e07eb5c8e16a784572a9
+Can I set the above configuration? (type 'yes' to accept): yes
+>>> Nodes configuration updated
+>>> Assign a different config epoch to each node
+>>> Sending CLUSTER MEET messages to join the cluster
+Waiting for the cluster to join
+..
+>>> Performing Cluster Check (using node 192.168.56.95:7000)
+M: 6ca88a5bd6cdc139c33dc3b90501c686567d7088 192.168.56.95:7000
+   slots:[0-5460] (5461 slots) master
+   1 additional replica(s)
+S: 9cd58bd9b083ecfae691600394bba5241943db97 192.168.56.95:7003
+   slots: (0 slots) slave
+   replicates 6ca88a5bd6cdc139c33dc3b90501c686567d7088
+M: bc7c30276b6fe86d9121e07eb5c8e16a784572a9 192.168.56.95:7002
+   slots:[10923-16383] (5461 slots) master
+   1 additional replica(s)
+S: c86d5ecfbed627320f2fcc423ebb19c7917fee48 192.168.56.95:7005
+   slots: (0 slots) slave
+   replicates bc7c30276b6fe86d9121e07eb5c8e16a784572a9
+S: 9abdbc210808c6fba9272459aa840db0bf34d457 192.168.56.95:7004
+   slots: (0 slots) slave
+   replicates 1974cd8abd06ff9638004b5dbaf968cff6e54a55
+M: 1974cd8abd06ff9638004b5dbaf968cff6e54a55 192.168.56.95:7001
+   slots:[5461-10922] (5462 slots) master
+   1 additional replica(s)
+[OK] All nodes agree about slots configuration.
+>>> Check for open slots...
+>>> Check slots coverage...
+[OK] All 16384 slots covered.
+```
+
+连接集群，设值并读取
+
+```bash
+[root@master redis-cluster]# redis-cli -c -p 7000
+127.0.0.1:7000> keys *
+(empty array)
+127.0.0.1:7000> set foo bar
+-> Redirected to slot [12182] located at 192.168.56.95:7002
+OK
+192.168.56.95:7002> set hello world
+-> Redirected to slot [866] located at 192.168.56.95:7000
+OK
+192.168.56.95:7000> keys *
+1) "hello"
+192.168.56.95:7000> get foo
+-> Redirected to slot [12182] located at 192.168.56.95:7002
+"bar"
+192.168.56.95:7002> keys *
+1) "foo"
+192.168.56.95:7002> get hello
+-> Redirected to slot [866] located at 192.168.56.95:7000
+"world"
+```
+
+
+
+
+
 
 
 
@@ -708,4 +827,3 @@ class23-2 练习示例代码里下列类中的作业题
 6. 基于 Spring Boot/Spring Data Redis 的 Sentinel 配置（com.xtransformers.redis.SentinelApplication 及 application.yml）
 
 未完待续。。。
-
