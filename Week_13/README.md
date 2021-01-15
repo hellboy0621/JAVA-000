@@ -67,6 +67,8 @@ class25
 
 1、（必做）搭建一个3节点Kafka集群，测试功能和性能；实现spring kafka下对kafka集群的操作，将代码提交到github。
 
+Kafka 相关 Java 代码见 kafka-demo 项目。
+
 1.（可选）下载并解压 Zookeeper（当然，也可以使用 Kafka 内置的 zookeeper）
 
 ```bash
@@ -193,7 +195,6 @@ testk
 ```bash
 [root@master kafka_2.13-2.7.0]# bin/kafka-console-consumer.sh --bootstrap-server 192.168.56.95:9092 --from-beginning --topic testk
 
-
 ```
 
 在另一个窗口中，创建 testk 这个 topic 的1个 producer
@@ -258,6 +259,26 @@ this is a message from producer.
 1000000 records sent, 10039.152696 records/sec (9.57 MB/sec), 3163.25 ms avg latency, 18549.00 ms max latency, 2342 ms 50th, 7916 ms 95th, 17895 ms 99th, 18427 ms 99.9th.
 ```
 
+
+
+***
+
+Win10 环境下，启动 zk 和 kafka
+
+```bash
+D:
+cd D:\develop\apache-zookeeper-3.6.1-bin\bin
+start zkServer.cmd
+
+# 启动前修改配置文件 server.properties，增加一行 listeners=PLAINTEXT://localhost:9092
+cd D:\develop\kafka_2.13-2.7.0\bin\windows
+kafka-server-start.bat ../../config/server.properties
+```
+
+***
+
+
+
 换成 Win10 后，性能有所改观。
 
 ```bash
@@ -302,7 +323,7 @@ D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-producer-perf-test.bat --topic tes
 4000000 records sent, 167420.056923 records/sec (159.66 MB/sec), 191.35 ms avg latency, 516.00 ms max latency, 180 ms 50th, 386 ms 95th, 451 ms 99th, 494 ms 99.9th.
 ```
 
-消费者性能测试
+消费者性能测试，10w 1线程 2.423s，100w 1线程 9.882s，100w 4线程 2.780s。
 
 ```bash
 D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-consumer-perf-test.bat --bootstrap-server localhost:9092 --topic testk --fetch-size 1048576 --messages 100000 --threads 1
@@ -319,5 +340,153 @@ D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-consumer-perf-test.bat --bootstrap
 WARNING: option [threads] and [num-fetch-threads] have been deprecated and will be ignored by the test
 start.time, end.time, data.consumed.in.MB, MB.sec, data.consumed.in.nMsg, nMsg.sec, rebalance.time.ms, fetch.time.ms, fetch.MB.sec, fetch.nMsg.sec
 2021-01-14 00:20:16:504, 2021-01-14 00:20:19:284, 953.8574, 343.1142, 1000192, 359781.2950, 1610554816855, -1610554814075, -0.0000, -0.0006
+```
+
+5.Java 代码发送消息，CLI 消费消息
+
+新创建一个 topic，并启动消费者
+
+```bash
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-topics.bat --zookeeper localhost:2181 --create --topic order-test1 --partitions 4 --replication-factor 1
+Created topic order-test1.
+
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-console-consumer.bat --bootstrap-server localhost:9092 --from-beginning --topic order-test1
+```
+
+
+
+6.Kafka 3节点集群部署
+
+6.1创建3个配置文件（server-9001.properties/server-9002.properties/server-9003.properties），borker.id，listeners，log.dirs，3个配置项修改成不一样的即可。
+
+```bash
+broker.id=0
+listeners=PLAINTEXT://localhost:9001
+log.dirs=/tmp/kafka-logs-9001
+
+broker.id=1
+listeners=PLAINTEXT://localhost:9002
+log.dirs=/tmp/kafka-logs-9002
+
+broker.id=2
+listeners=PLAINTEXT://localhost:9003
+log.dirs=/tmp/kafka-logs-9003
+```
+
+6.2如果复用之前使用的 zk，需要把除了 zookeeper 自带的节点保留，其他节点清除，防止冲突。
+
+6.3启动3个节点
+
+```bash
+D:
+cd D:\develop\kafka_2.13-2.7.0\bin\windows
+
+kafka-server-start.bat ../../config/server-9001.properties
+kafka-server-start.bat ../../config/server-9002.properties
+kafka-server-start.bat ../../config/server-9003.properties
+```
+
+6.4启动完成后，创建 topic 并查看详情。
+
+```bash
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-topics.bat --zookeeper localhost:2181 --create --topic test32 --partitions 3 --replication-factor 2
+Created topic test32.
+
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-topics.bat --zookeeper localhost:2181 --describe --topic test32
+Topic: test32   PartitionCount: 3       ReplicationFactor: 2    Configs:
+        Topic: test32   Partition: 0    Leader: 1       Replicas: 1,2   Isr: 1,2
+        Topic: test32   Partition: 1    Leader: 2       Replicas: 2,0   Isr: 2,0
+        Topic: test32   Partition: 2    Leader: 0       Replicas: 0,1   Isr: 0,1
+```
+
+|     | broker-0 | broker-1 | broker-2 |
+|  ----  | ----  | ----  | ----  |
+| partition0  |  |          ||
+| partition1  | replica |  |leader|
+| partition2  | leader | replica ||
+
+6.5启动一个 producer 和 consumer，这里跟单节点区别是，--bootstrap-server 把所有节点都写上。
+
+```bash
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-console-producer.bat --bootstrap-server localhost:9001,localhost:9002,localhost:9003 --topic test32
+
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-console-consumer.bat --bootstrap-server localhost:9001,localhost:9002,localhost:9003 --from-beginning --topic test32
+```
+
+Mac 不会乱码，Win10 很不幸，中文乱码了。。。
+
+6.6性能测试
+
+```bash
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-producer-perf-test.bat --topic test32 --num-records 1000000 --record-size 1000 --throughput 1000000 --producer-props bootstrap.servers=localhost:9001,localhost:9002,localhost:9003
+110049 records sent, 22005.4 records/sec (20.99 MB/sec), 1170.4 ms avg latency, 1656.0 ms max latency.
+105696 records sent, 21130.7 records/sec (20.15 MB/sec), 1428.8 ms avg latency, 2548.0 ms max latency.
+167408 records sent, 33481.6 records/sec (31.93 MB/sec), 1054.8 ms avg latency, 2555.0 ms max latency.
+220633 records sent, 44126.6 records/sec (42.08 MB/sec), 779.9 ms avg latency, 1832.0 ms max latency.
+287290 records sent, 57458.0 records/sec (54.80 MB/sec), 541.7 ms avg latency, 1140.0 ms max latency.
+1000000 records sent, 37043.897018 records/sec (35.33 MB/sec), 857.58 ms avg latency, 2555.00 ms max latency, 811 ms 50th, 1811 ms 95th, 2364 ms 99th, 2534 ms 99.9th.
+```
+
+性能显然没有单机高，毕竟有副本了。再创建一个16个分区，2个副本的 topic，再测试。
+
+这里遇到一个坑，启动时没有使用管理员打开黑框，造成执行到一半时，3个 Broker 全部关闭，由于没有文件夹权限造成的。数据全部清除，zk 数据清除重新来过的。
+
+这个错误在使用管理员权限时也复现了，应该是 windows 一个坑，千万不敢再删除 topic 了！
+
+https://stackoverflow.com/questions/50755827/accessdeniedexception-when-deleting-a-topic-on-windows-kafka
+
+折腾了一下，比刚才更慢了。
+
+```bash
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-topics.bat --zookeeper localhost:2181 --create --topic test32 --partitions 3 --replication-factor 2
+Created topic test32.
+
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-topics.bat --zookeeper localhost:2181 --describe --topic test32
+Topic: test32   PartitionCount: 3       ReplicationFactor: 2    Configs:
+        Topic: test32   Partition: 0    Leader: 0       Replicas: 0,1   Isr: 0,1
+        Topic: test32   Partition: 1    Leader: 1       Replicas: 1,2   Isr: 1,2
+        Topic: test32   Partition: 2    Leader: 2       Replicas: 2,0   Isr: 2,0
+
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-producer-perf-test.bat --topic test32 --num-records 1000000 --record-size 1000 --throughput 1000000 --producer-props bootstrap.servers=localhost:9001,localhost:9002,localhost:9003
+54609 records sent, 10919.6 records/sec (10.41 MB/sec), 1932.2 ms avg latency, 2906.0 ms max latency.
+73664 records sent, 14732.8 records/sec (14.05 MB/sec), 2221.8 ms avg latency, 2942.0 ms max latency.
+86272 records sent, 17254.4 records/sec (16.46 MB/sec), 1876.6 ms avg latency, 3322.0 ms max latency.
+185625 records sent, 37125.0 records/sec (35.41 MB/sec), 980.7 ms avg latency, 3289.0 ms max latency.
+97114 records sent, 19422.8 records/sec (18.52 MB/sec), 1333.5 ms avg latency, 3989.0 ms max latency.
+159170 records sent, 31834.0 records/sec (30.36 MB/sec), 1204.8 ms avg latency, 4444.0 ms max latency.
+299330 records sent, 59866.0 records/sec (57.09 MB/sec), 591.8 ms avg latency, 2051.0 ms max latency.
+1000000 records sent, 27899.450381 records/sec (26.61 MB/sec), 1139.93 ms avg latency, 4444.00 ms max latency, 974 ms 50th, 2912 ms 95th, 4010 ms 99th, 4384 ms 99.9th.
+```
+
+6.7使用 Java 代码操作 topic
+
+先创建一个新的 topic : order-cluster-test1
+
+```bash
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-topics.bat --zookeeper localhost:2181 --create --topic order-cluster-test1 --partitions 3 --replication-factor 2
+Created topic order-cluster-test1.
+
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-topics.bat --zookeeper localhost:2181 --describe --topic order-cluster-test1
+Topic: order-cluster-test1      PartitionCount: 3       ReplicationFactor: 2    Configs:
+        Topic: order-cluster-test1      Partition: 0    Leader: 1       Replicas: 1,2   Isr: 1,2
+        Topic: order-cluster-test1      Partition: 1    Leader: 2       Replicas: 2,0   Isr: 2,0
+        Topic: order-cluster-test1      Partition: 2    Leader: 0       Replicas: 0,1   Isr: 0,1
+```
+
+启动一个 CLI 消费者，然后启动生产者程序 ProducerClusterDemo。
+
+```bash
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-console-consumer.bat --bootstrap-server localhost:9001,localhost:9002,localhost:9003 --from-beginning --topic order-cluster-test1
+{"id":1001,"price":95.0,"symbol":"USD2CNY","ts":1610734113557}
+```
+
+启动一个 CLI 生产者，然后启动消费者程序 ConsumerClusterDemo。
+
+```bash
+D:\develop\kafka_2.13-2.7.0\bin\windows>kafka-console-producer.bat --bootstrap-server localhost:9001,localhost:9002,localhost:9003 --topic order-cluster-test1
+>{"id":9595,"price":9595.0,"symbol":"CNY2USD","ts":1610734113557}
+
+# IDEA 打印日志
+Order(id=9595, ts=1610734113557, symbol=CNY2USD, price=9595.0)
 ```
 
